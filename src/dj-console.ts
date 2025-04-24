@@ -1,17 +1,31 @@
-import {LitElement, html, css} from 'lit';
-import {customElement, property} from 'lit/decorators.js';
+import { LitElement, html, css } from "lit";
+import { customElement } from "lit/decorators.js";
+import "./turntable/turntable";
 
-@customElement('dj-console')
-export class LitApp extends LitElement {
-    static styles = [
-        css`
-            :host {
-                display: block;
-            }
-        `
-    ];
+@customElement("cp-console")
+export class DjConsole extends LitElement {
+  static styles = [
+    css`
+      :host {
+        display: block;
+      }
 
-    render() {
-        return html`<h1>CodicePlastico</h1>`;
-    }
+      .dj-console {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+        padding: 20px;
+      }
+    `,
+  ];
+
+  render() {
+    return html`
+      <div class="dj-console">
+        <cp-turntable></cp-turntable>
+        <!--<cp-turntable image="logo-red.png"></cp-turntable>-->
+      </div>
+    `;
+  }
 }

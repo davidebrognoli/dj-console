@@ -1,10 +1,10 @@
 import { LitElement, html, css } from "lit";
 import { customElement, query } from "lit/decorators.js";
-import "./turntable/new-turntable";
-import "./mixer/mixer";
+import "./turntable";
+import "./mixer";
 
-@customElement("cp-console")
-export class DjConsole extends LitElement {
+@customElement("base-console")
+export class BaseConsole extends LitElement {
   static styles = css`
     :host {
       display: block;
@@ -49,9 +49,9 @@ export class DjConsole extends LitElement {
   render() {
     return html`
       <div class="dj-console">
-        <dj-turntable id="deckA" trackUrl="test.mp3"></dj-turntable>
-        <dj-mixer></dj-mixer>
-        <dj-turntable id="deckB" trackUrl="test.mp3"></dj-turntable>
+        <base-turntable id="deckA" trackUrl="test.mp3"></base-turntable>
+        <base-mixer></base-mixer>
+        <base-turntable id="deckB" trackUrl="test.mp3"></base-turntable>
       </div>
     `;
   }

@@ -19,8 +19,15 @@ export class PowerWheel extends LitElement {
       .red-ray {
         position: absolute;
         left: 100%;
+        margin-left: -16px;
+        top: -24px;
+        transform: rotate(-33deg);
+        opacity: 0;
+        transition: opacity 0.5s ease-in-out;
+      }
 
-        top: 0;
+      .red-ray.on {
+        opacity: 1;
       }
       .wheel {
         width: 30px;
@@ -40,7 +47,7 @@ export class PowerWheel extends LitElement {
         transition: transform 0.3s ease-in-out;
       }
 
-      .on {
+      .wheel.on {
         transform: rotate(-100deg);
       }
 
@@ -93,27 +100,17 @@ export class PowerWheel extends LitElement {
             </text>
           </svg>
         </div>
-        <svg class="red-ray" width="50" height="30" viewBox="0 0 50 30">
+        <svg class="red-ray ${this.on ? 'on' : ''}" width="60" height="40" viewBox="0 0 60 40">
           <defs>
             <linearGradient id="rayGradient" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stop-color="#ff3535" stop-opacity="0.95" />
-              <stop offset="95%" stop-color="transparent" stop-opacity="0" />
+              <stop offset="0%" stop-color="#ff3535" stop-opacity="1" />
+              <stop offset="90%" stop-color="transparent" stop-opacity="0.4" />
             </linearGradient>
             <filter id="blur-ray" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="2" />
+              <feGaussianBlur stdDeviation="1.5" />
             </filter>
           </defs>
-          <!-- Raggio corto, orientalo a piacere! -->
-          <line
-            x1="12"
-            y1="14"
-            x2="48"
-            y2="7"
-            stroke="url(#rayGradient)"
-            stroke-width="7"
-            stroke-linecap="round"
-            filter="url(#blur-ray)"
-          />
+          <polygon points="10,20 58,5 58,35" fill="url(#rayGradient)" filter="url(#blur-ray)" />
         </svg>
       </div>
     `

@@ -1,0 +1,10 @@
+@font-face {
+  font-family: 'Musieer';
+  src:
+    url('musieer/Musieer.ttf.woff') format('woff'),
+    url('musieer/Musieer.ttf.svg#Musieer') format('svg'),
+    url('musieer/Musieer.ttf.eot'),
+    url('musieer/Musieer.ttf.eot?#iefix') format('embedded-opentype');
+  font-weight: normal;
+  font-style: normal;
+}

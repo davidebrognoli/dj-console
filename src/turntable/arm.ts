@@ -44,7 +44,6 @@ export class Arm extends LitElement {
   @property({ type: Number }) progress = 0
 
   get rotation() {
-    console.log(this.playing, this.progress)
     if (!this.powerOn) return 0
     return 20 + (this.progress / 100) * (45 - 20)
   }

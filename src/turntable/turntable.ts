@@ -1,12 +1,11 @@
 import { LitElement, html, css } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
-
 import './arm'
 import './platter'
 import './power-wheel'
 
-@customElement('cp-turntable')
-export class Turntable extends LitElement {
+@customElement('dj-turntable')
+export class DjTurntable extends LitElement {
   static styles = [
     css`
       :host {
@@ -60,11 +59,12 @@ export class Turntable extends LitElement {
         writing-mode: vertical-rl;
         -webkit-appearance: none;
         appearance: none;
-        width: 6px;
-        height: 140px;
-        background: linear-gradient(to right, #333, #555, #333);
+        background: #333;
+        box-shadow: inset -1px -1px 0 1px #555;
+        border-radius: 4px;
         outline: none;
-        transition: opacity 0.2s;
+        width: 7px;
+        height: 165px;
       }
 
       /* Stile del cursore */
@@ -92,47 +92,80 @@ export class Turntable extends LitElement {
         left: 10px;
         z-index: 2;
       }
-
-      @keyframes spin {
-        from {
-          transform: rotate(0deg);
-        }
-        to {
-          transform: rotate(360deg);
-        }
-      }
     `,
   ]
 
-  @property()
-  image = 'logo-grey.png'
+  @property({ type: String }) trackUrl = ''
+  @property({ type: Number }) volume = 1.0
+  @property({ type: String }) image = 'logo-grey.png'
 
   @state() playing = false
   @state() progress = 0
-
   @state() powerOn = false
 
-  rotation = 0
-  speed = 33.3 // RPM
-  pitchControl = 0
+  private audioContext?: AudioContext
+  private audioElement?: HTMLAudioElement
+  private trackSource?: MediaElementAudioSourceNode
+  private gainNode?: GainNode
+
+  private rotation = 0
+  private speed = 33.3 // RPM
+  private pitchControl = 0
   scratching = false
 
   startX = 0
   startY = 0
   lastAngle = 0
   audioPaused = false
-
   lastTimestamp: number | null = null
-  audio = new Audio('test.mp3')
+
+  connectedCallback() {
+    super.connectedCallback()
+    if (this.trackUrl) {
+      this.setupAudio()
+    }
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback()
+    this.cleanupAudio()
+  }
+
+  private async setupAudio() {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext
+    if (!AudioContextClass) {
+      console.error('Web Audio API is not supported in this browser.')
+      return
+    }
+
+    this.audioContext = new AudioContextClass()
+
+    this.audioElement = new Audio(this.trackUrl)
+    this.audioElement.crossOrigin = 'anonymous'
+
+    this.trackSource = this.audioContext.createMediaElementSource(this.audioElement)
+    this.gainNode = this.audioContext.createGain()
+    this.gainNode.gain.value = this.volume
+
+    this.trackSource.connect(this.gainNode).connect(this.audioContext.destination)
+  }
+
+  private cleanupAudio() {
+    this.audioElement?.pause()
+    this.trackSource?.disconnect()
+    this.gainNode?.disconnect()
+    this.audioContext?.close()
+  }
 
   togglePlay() {
     if (!this.powerOn) return
     if (this.playing) {
-      this.audio.pause()
+      this.audioElement?.pause()
     } else {
       this.lastTimestamp = performance.now()
       requestAnimationFrame(this.updateRotation.bind(this))
-      this.audio.play()
+      this.audioContext?.resume()
+      this.audioElement?.play()
     }
     this.playing = !this.playing
   }
@@ -140,12 +173,14 @@ export class Turntable extends LitElement {
   updateRotation(timestamp: number) {
     if (!this.playing) return
     if (this.lastTimestamp) {
-      this.progress = (this.audio.currentTime / this.audio.duration) * 100
-      const delta = (timestamp - this.lastTimestamp) / 1000 // in secondi
-      const currentSpeed = this.speed + (this.speed * this.pitchControl) / 100
-      this.rotation += (currentSpeed / 60) * 360 * delta
-      this.rotation %= 360
-      this.requestUpdate()
+      if (this.audioElement) {
+        this.progress = (this.audioElement.currentTime / this.audioElement.duration) * 100
+        const delta = (timestamp - this.lastTimestamp) / 1000 // in secondi
+        const currentSpeed = this.speed + (this.speed * this.pitchControl) / 100
+        this.rotation += (currentSpeed / 60) * 360 * delta
+        this.rotation %= 360
+        this.requestUpdate()
+      }
     }
     this.lastTimestamp = timestamp
     requestAnimationFrame(this.updateRotation.bind(this))
@@ -158,98 +193,32 @@ export class Turntable extends LitElement {
   }
 
   setPlaybackRate() {
-    const minRate = 0.9
-    const maxRate = 1.1
+    if (this.audioElement) {
+      const minRate = 0.9
+      const maxRate = 1.1
 
-    const playbackRate = minRate + ((this.pitchControl + 10) / 20) * (maxRate - minRate)
+      const playbackRate = minRate + ((this.pitchControl + 10) / 20) * (maxRate - minRate)
 
-    // Impostiamo la velocità
-    this.audio.playbackRate = playbackRate
+      this.audioElement.playbackRate = playbackRate
+    }
   }
 
-  startScratch(event: MouseEvent | TouchEvent) {
-    event.preventDefault()
-    this.scratching = true
-    this.audioPaused = this.audio.paused
-
-    if (!this.audioPaused) {
-      this.audio.play()
+  setVolume(value: number) {
+    this.volume = value
+    if (this.gainNode) {
+      this.gainNode.gain.value = value
     }
-
-    const { clientX, clientY } = 'touches' in event ? event.touches[0] : event
-    const rect = this.shadowRoot!.querySelector('.turntable__platter')!.getBoundingClientRect()
-    const centerX = rect.left + rect.width / 2
-    const centerY = rect.top + rect.height / 2
-
-    this.startX = clientX - centerX
-    this.startY = clientY - centerY
-    this.lastAngle = Math.atan2(this.startY, this.startX) * (180 / Math.PI)
-
-    document.addEventListener('mousemove', this.onScratchMove)
-    document.addEventListener('mouseup', this.endScratch)
-    document.addEventListener('touchmove', this.onScratchMove)
-    document.addEventListener('touchend', this.endScratch)
   }
 
-  onScratchMove = (event: MouseEvent | TouchEvent) => {
-    if (!this.scratching) return
-
-    const { clientX, clientY } = 'touches' in event ? event.touches[0] : event
-    const rect = this.shadowRoot!.querySelector('.turntable__platter')!.getBoundingClientRect()
-    const centerX = rect.left + rect.width / 2
-    const centerY = rect.top + rect.height / 2
-
-    const dx = clientX - centerX
-    const dy = clientY - centerY
-    const angle = Math.atan2(dy, dx) * (180 / Math.PI)
-    let deltaAngle = angle - this.lastAngle
-
-    if (deltaAngle > 180) deltaAngle -= 360
-    if (deltaAngle < -180) deltaAngle += 360
-
-    this.rotation += deltaAngle
-    this.rotation %= 360
-    this.lastAngle = angle
-
-    // Determina la velocità dello scratch
-    const scratchSpeed = deltaAngle / 5 // Sensibilità
-
-    // Se il delta è negativo, significa che si sta muovendo all'indietro
-    if (deltaAngle < 0) {
-      this.audio.currentTime -= Math.abs(deltaAngle) / 100
-    } else {
-      this.audio.currentTime += Math.abs(deltaAngle) / 100
-    }
-
-    // Metti in pausa per evitare interferenze con la normale riproduzione
-    this.audio.pause()
-
-    if (this.audio.paused && Math.abs(scratchSpeed) > 0.1) {
-      this.audio.play()
-    }
-
-    this.requestUpdate()
-  }
-
-  endScratch = () => {
-    this.scratching = false
-
-    if (!this.audioPaused) {
-      this.audio.play()
-    }
-
-    this.audio.playbackRate = 1 // Ripristina la velocità normale
-    document.removeEventListener('mousemove', this.onScratchMove)
-    document.removeEventListener('mouseup', this.endScratch)
-    document.removeEventListener('touchmove', this.onScratchMove)
-    document.removeEventListener('touchend', this.endScratch)
+  getVolume() {
+    return this.volume
   }
 
   handlePowerToggle(event: CustomEvent) {
     this.powerOn = event.detail
-    if (!this.powerOn && this.playing) {
-      this.audio.pause()
-      this.audio.currentTime = 0
+    if (!this.powerOn && this.playing && this.audioElement) {
+      this.audioElement.pause()
+      this.audioElement.currentTime = 0
       this.rotation = 0
       this.progress = 0
       this.playing = false

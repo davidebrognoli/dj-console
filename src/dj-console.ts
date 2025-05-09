@@ -37,9 +37,9 @@ export class DjConsole extends LitElement {
   render() {
     return html`
       <div class="dj-console">
-        <dj-turntable id="deckA" trackUrl="test.mp3"></dj-turntable>
+        <dj-turntable id="deckA" trackUrl="left.mp3"></dj-turntable>
         <dj-mixer></dj-mixer>
-        <dj-turntable id="deckB" trackUrl="test.mp3" image="logo-red.png"></dj-turntable>
+        <dj-turntable id="deckB" trackUrl="right.mp3" image="logo-red.png"></dj-turntable>
       </div>
     `
   }

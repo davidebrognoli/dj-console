@@ -68,21 +68,9 @@ export class Arm extends LitElement {
   @property() image: string = './assets/logo.png'
   @property() rotation: number = 0
 
-  startScratch(e: MouseEvent | TouchEvent) {
-    e.preventDefault()
-    e.stopPropagation()
-    const target = e.target as HTMLElement
-    console.log('target', target)
-  }
-
   render() {
     return html`
-      <div
-        class="turntable__platter"
-        style="transform: rotate(${this.rotation}deg);"
-        @mousedown=${this.startScratch}
-        @touchstart=${this.startScratch}
-      >
+      <div class="turntable__platter" style="transform: rotate(${this.rotation}deg);">
         <div class="turntable__record">
           <div class="turntable__label">
             <img
